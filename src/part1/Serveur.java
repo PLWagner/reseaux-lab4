@@ -3,10 +3,11 @@ import java.net.*;
 import java.io.*;
 
 public class Serveur {
-    public static void main(String[] zero) throws Exception {
+    @SuppressWarnings("deprecation")
+	public static void main(String[] zero) throws Exception {
 
         ServerSocket serverSocket = null;
-        Socket socketDuServeur ;
+        Socket socketDuServeur = null ;
         try {
             serverSocket = new ServerSocket(4444);
             System.out.println("Le serveur est à l'écoute du port "+ serverSocket.getLocalPort());
@@ -16,23 +17,24 @@ public class Serveur {
             System.err.println("Could not listen on port: 4444.");
             System.exit(1);
         }
+        
+        
+        DataInputStream is = new DataInputStream(socketDuServeur.getInputStream());
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
-        Socket clientSocket = null;
-        try {
-            clientSocket = serverSocket.accept();
-        } catch (IOException e) {
-            System.err.println("Accept failed.");
-            System.exit(1);
-        }
+		do {
+			String line = "";
+
+			try {
+				line = br.readLine();
+			} catch (IOException e) {
+				System.out.println("Error printing line");
+			}
+			System.out.println( String.format("\nRecieved \"%s\" from client.", line));
+		}
+		while(true);
         
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(
-                clientSocket.getInputStream()));
-        String inputLine, outputLine;
-        
-        clientSocket.close();
-        serverSocket.close();
+       // serverSocket.close();
         
     }
 }

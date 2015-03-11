@@ -24,7 +24,7 @@ public class Client {
 		}
 
 		String hostname = args[0];
-		int port = Integer.parseInt(args[0]);
+		int port = Integer.parseInt(args[1]);
 
 		Socket socket = null;
 		try {
