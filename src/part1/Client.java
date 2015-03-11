@@ -49,7 +49,7 @@ public class Client {
 				System.out.println("Error printing line");
 			}
 			System.out.println( String.format("\nSending \"%s\" to server.", line));
-			os.writeBytes(line);
+			os.writeBytes(line + "\n");
 		}
 		while(true);
 
