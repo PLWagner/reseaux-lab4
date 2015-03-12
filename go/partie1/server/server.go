@@ -29,20 +29,16 @@ func main() {
 		if err != nil {
 			println("Could not accept:", err.Error())
 		}
-		go echo(con)
-	}
-
-}
-
-func echo(conn net.Conn) {
-	connbuf := bufio.NewReader(conn)
-	for {
-		str, err := connbuf.ReadString('\n')
-		if len(str) > 0 {
-			fmt.Print(str)
-		}
-		if err != nil {
-			break
+		connbuf := bufio.NewReader(con)
+		for {
+			str, err := connbuf.ReadString('\n')
+			if len(str) > 0 {
+				fmt.Print(str)
+			}
+			if err != nil {
+				break
+			}
 		}
 	}
+
 }
