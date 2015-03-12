@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -39,7 +40,7 @@ func echo(conn net.Conn) {
 	for {
 		str, err := connbuf.ReadString('\n')
 		if len(str) > 0 {
-			fmt.Print(str)
+			fmt.Print(strings.TrimSpace(str) + " (from: " + conn.RemoteAddr().String() + ")\n")
 		}
 		if err != nil {
 			break
