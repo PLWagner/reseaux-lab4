@@ -41,6 +41,7 @@ func echo(conn net.Conn) {
 		str, err := connbuf.ReadString('\n')
 		if len(str) > 0 {
 			fmt.Print(strings.TrimSpace(str) + " (from: " + conn.RemoteAddr().String() + ")\n")
+			_, err = conn.Write([]byte(strings.ToUpper(str)))
 		}
 		if err != nil {
 			break

@@ -33,11 +33,20 @@ func main() {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
+	connbuf := bufio.NewReader(conn)
 	for {
 		fmt.Println("Enter line:")
 		line, _ := reader.ReadString('\n')
 		fmt.Println("Sending: \"" + strings.TrimSpace(line) + "\"")
 		_, err = conn.Write([]byte(line))
-	}
 
+		str, err := connbuf.ReadString('\n')
+		if err != nil {
+			println("Dial failed:", err.Error())
+			os.Exit(1)
+		}
+		if len(str) > 0 {
+			fmt.Print("Server response: " + strings.TrimSpace(str) + "\n")
+		}
+	}
 }
