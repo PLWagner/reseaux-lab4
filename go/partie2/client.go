@@ -33,8 +33,7 @@ func main() {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	connbuf := bufio.NewReader(conn)
-	go echo(*connbuf)
+	go echo(*bufio.NewReader(conn))
 
 	for {
 		fmt.Println("Enter line:")
