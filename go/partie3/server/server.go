@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -17,33 +17,43 @@ func main() {
 		os.Exit(1)
 	}
 
-	ln, err := net.Listen("tcp", ":"+*port)
-	if err != nil {
-		println("Listen failed:", err.Error())
-		os.Exit(1)
-	}
+	addr, _ := net.ResolveUDPAddr("udp", ":"+*port)
+	sock, _ := net.ListenUDP("udp", addr)
 
 	for {
-		con, err := ln.Accept()
+		buf := make([]byte, 1024)
+		rlen, _, err := sock.ReadFromUDP(buf)
 		if err != nil {
-
-			println("Could not accept:", err.Error())
-
+			fmt.Println(err)
 		}
-		go echo(con)
+		go handlePacket(buf[0:rlen])
 	}
-
 }
 
-func echo(conn net.Conn) {
-	connbuf := bufio.NewReader(conn)
-	for {
-		str, err := connbuf.ReadString('\n')
-		if len(str) > 0 {
-			fmt.Print(str)
+func handlePacket(packet []byte) {
+
+	// Lecture de QR
+	QR := packet[3]
+
+	if QR == 0 { // ****** Dans le cas d'un paquet requete *****
+
+		// *Lecture du Query Domain name, a partir du 13 byte
+		qnameIndex := 12
+		var domainName []string
+		for {
+			//Break if 0 flag is found
+			if packet[qnameIndex] == 0 {
+				break
+			}
+
+			domainFieldLenght := int(packet[qnameIndex])
+			domainName = append(domainName, string(packet[qnameIndex+1:qnameIndex+1+domainFieldLenght]))
+			qnameIndex += domainFieldLenght + 1
 		}
-		if err != nil {
-			break
-		}
+		fmt.Println("REQUEST pour: " + strings.Join(domainName, "."))
+
+	} else { // ****** Dans le cas d'un paquet reponse *****
+		fmt.Print("ELLO")
 	}
+
 }
