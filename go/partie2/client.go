@@ -34,13 +34,20 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 	connbuf := bufio.NewReader(conn)
+	go echo(*connbuf)
+
 	for {
 		fmt.Println("Enter line:")
 		line, _ := reader.ReadString('\n')
 		fmt.Println("Sending: \"" + strings.TrimSpace(line) + "\"")
 		_, err = conn.Write([]byte(line))
+	}
+}
 
-		str, err := connbuf.ReadString('\n')
+func echo(reader bufio.Reader) {
+
+	for {
+		str, err := reader.ReadString('\n')
 		if err != nil {
 			println("Dial failed:", err.Error())
 			os.Exit(1)
