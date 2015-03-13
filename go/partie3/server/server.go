@@ -78,22 +78,16 @@ func handlePacket(conn *net.UDPConn, sourceAddr *net.UDPAddr, packet []byte) {
 		QName := strings.Join(domainName, ".")
 		fmt.Println("REQUEST QNAME: " + QName)
 
-		// *Si le mode est redirection seulement
-		if redirectionSeulement {
-			// *Rediriger le paquet vers le serveur DNS
-			fmt.Println("Forwarding request...")
+		var ip string
+		if !redirectionSeulement {
+			ip = qFinder.SearchHost(QName) //Seulement regarder le ficher si on est pas en mode redirection
+		}
+		if ip != "" {
+			fmt.Println("Found in .TXT ", ip)
+			//TODO: answer the query
+		} else {
 			forwardPacket("8.8.8.8", "53", conn, packet)
 			waitingQueries[string(ID)] = [2]string{sourceAddr.IP.String(), strconv.Itoa(sourceAddr.Port)}
-		} else {
-			// *Rechercher l'adresse IP associe au Query Domain name dans le fichier de correspondance de ce serveur
-			ip := qFinder.SearchHost(QName)
-			if ip != "" {
-				fmt.Println("Found in .TXT ", ip)
-				//TODO: answer the query
-			} else {
-				forwardPacket("8.8.8.8", "53", conn, packet)
-				waitingQueries[string(ID)] = [2]string{sourceAddr.IP.String(), strconv.Itoa(sourceAddr.Port)}
-			}
 		}
 
 	} else { // ****** Dans le cas d'un paquet reponse *****
