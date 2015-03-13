@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/PLWagner/reseaux-lab4/go/partie3/queryFinder"
@@ -12,6 +13,9 @@ import (
 
 var redirectionSeulement bool
 var qFinder queryFinder.QueryFinder
+
+// Those are the queries we have no answer for yet
+var waitingQueries map[string][2]string
 
 func main() {
 	var port = flag.String("port", "", "Port Number")
@@ -35,6 +39,8 @@ func main() {
 
 	redirectionSeulement = *redirectOnlyFlag
 
+	waitingQueries = make(map[string][2]string)
+
 	// Create the Socket
 	addr, _ := net.ResolveUDPAddr("udp", ":"+*port)
 	sock, _ := net.ListenUDP("udp", addr)
@@ -42,20 +48,22 @@ func main() {
 	// Main UDP loop
 	for {
 		buf := make([]byte, 1024)
-		rlen, _, err := sock.ReadFromUDP(buf)
+		rlen, sourceAddr, err := sock.ReadFromUDP(buf)
 		if err != nil {
 			fmt.Println(err)
 		}
-		go handlePacket(sock, buf[0:rlen])
+		go handlePacket(sock, sourceAddr, buf[0:rlen])
 	}
 }
 
-func handlePacket(conn *net.UDPConn, packet []byte) {
+func handlePacket(conn *net.UDPConn, sourceAddr *net.UDPAddr, packet []byte) {
 	// Lecture de QR
 	QR := packet[3]
 
-	if QR == 0 { // ****** Dans le cas d'un paquet requete *****
+	ID := packet[1:2]
+	fmt.Println("Received request id:", ID)
 
+	if QR == 0 { // ****** Dans le cas d'un paquet requete *****
 		// *Lecture du Query Domain name, a partir du 13 byte
 		qnameIndex := 12
 		var domainName []string
@@ -75,23 +83,31 @@ func handlePacket(conn *net.UDPConn, packet []byte) {
 			// *Rediriger le paquet vers le serveur DNS
 			fmt.Println("Forwarding request...")
 			forwardPacket("8.8.8.8", "53", conn, packet)
+			waitingQueries[string(ID)] = [2]string{sourceAddr.IP.String(), strconv.Itoa(sourceAddr.Port)}
 		} else {
 			// *Rechercher l'adresse IP associe au Query Domain name dans le fichier de correspondance de ce serveur
 			ip := qFinder.SearchHost(QName)
 			if ip != "" {
 				fmt.Println("Found in .TXT ", ip)
+				//TODO: answer the query
 			} else {
 				forwardPacket("8.8.8.8", "53", conn, packet)
+				waitingQueries[string(ID)] = [2]string{sourceAddr.IP.String(), strconv.Itoa(sourceAddr.Port)}
 			}
 		}
 
 	} else { // ****** Dans le cas d'un paquet reponse *****
-		fmt.Println("Received answer")
+		fmt.Println("Received answer for : ", ID)
+		//Find the id
+		waitingAddr := waitingQueries[string(ID)]
+		forwardPacket(waitingAddr[0], waitingAddr[1], conn, packet)
+		delete(waitingQueries, string(ID))
 	}
 
 }
 
 func forwardPacket(hostname, port string, conn *net.UDPConn, packet []byte) {
+	fmt.Println("Forwarding to", hostname, ":", port)
 	serverAddr, _ := net.ResolveUDPAddr("udp", hostname+":"+port)
 	conn.WriteToUDP(packet, serverAddr)
 }

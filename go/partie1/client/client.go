@@ -38,6 +38,9 @@ func main() {
 		line, _ := reader.ReadString('\n')
 		fmt.Println("Sending: \"" + strings.TrimSpace(line) + "\"")
 		_, err = conn.Write([]byte(line))
+		if err != nil {
+			fmt.Println("Could not send message to server")
+		}
 	}
 
 }
