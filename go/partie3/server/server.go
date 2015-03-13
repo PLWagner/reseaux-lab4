@@ -6,10 +6,12 @@ import (
 	"net"
 	"os"
 	"strings"
+
+	"github.com/PLWagner/reseaux-lab4/go/partie3/queryFinder"
 )
 
 var redirectionSeulement bool
-var dnsFile string
+var qFinder queryFinder.QueryFinder
 
 func main() {
 	var port = flag.String("port", "", "Port Number")
@@ -27,6 +29,9 @@ func main() {
 		fmt.Println("You must specify --DNSFile")
 		os.Exit(1)
 	}
+
+	// Create a QueryFinder with the dnsFile
+	qFinder = *queryFinder.NewQueryFinder(*dnsFileFlag)
 
 	redirectionSeulement = *redirectOnlyFlag
 
@@ -46,7 +51,6 @@ func main() {
 }
 
 func handlePacket(conn *net.UDPConn, packet []byte) {
-
 	// Lecture de QR
 	QR := packet[3]
 
@@ -56,11 +60,9 @@ func handlePacket(conn *net.UDPConn, packet []byte) {
 		qnameIndex := 12
 		var domainName []string
 		for {
-			//Break if 0 flag is found
 			if packet[qnameIndex] == 0 {
-				break
+				break //Break if 0 flag is found
 			}
-
 			domainFieldLenght := int(packet[qnameIndex])
 			domainName = append(domainName, string(packet[qnameIndex+1:qnameIndex+1+domainFieldLenght]))
 			qnameIndex += domainFieldLenght + 1
@@ -72,15 +74,24 @@ func handlePacket(conn *net.UDPConn, packet []byte) {
 		if redirectionSeulement {
 			// *Rediriger le paquet vers le serveur DNS
 			fmt.Println("Forwarding request...")
-			serverAddr, _ := net.ResolveUDPAddr("udp", "8.8.8.8:53")
-			conn.WriteToUDP(packet, serverAddr)
+			forwardPacket("8.8.8.8", "53", conn, packet)
 		} else {
-			// *Sinon
 			// *Rechercher l'adresse IP associe au Query Domain name dans le fichier de correspondance de ce serveur
+			ip := qFinder.SearchHost(QName)
+			if ip != "" {
+				fmt.Println("Found in .TXT ", ip)
+			} else {
+				forwardPacket("8.8.8.8", "53", conn, packet)
+			}
 		}
 
 	} else { // ****** Dans le cas d'un paquet reponse *****
-		fmt.Print("Received answer")
+		fmt.Println("Received answer")
 	}
 
+}
+
+func forwardPacket(hostname, port string, conn *net.UDPConn, packet []byte) {
+	serverAddr, _ := net.ResolveUDPAddr("udp", hostname+":"+port)
+	conn.WriteToUDP(packet, serverAddr)
 }

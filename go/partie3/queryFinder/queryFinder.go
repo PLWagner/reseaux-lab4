@@ -1,49 +1,34 @@
-package main //queryFinder
+package queryFinder
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
+// QueryFinder is used to find hosts in a Text file
+type QueryFinder struct {
+	dnsFilePath string
 }
 
-//Read the lines of the file
-func startSearch(path string) {
-	inFile, _ := os.Open(path)
+// NewQueryFinder returns a new QueryFinder
+func NewQueryFinder(DNSFilePath string) *QueryFinder {
+	q := &QueryFinder{DNSFilePath}
+	return q
+}
+
+//SearchHost searches the lines of the file for the hostname
+func (q *QueryFinder) SearchHost(hostname string) string {
+	inFile, _ := os.Open(q.dnsFilePath)
 	defer inFile.Close()
 	scanner := bufio.NewScanner(inFile)
 	scanner.Split(bufio.ScanLines)
 
-	if scanner.Text() != "\n" {
-
-		for scanner.Scan() {
-			text := strings.Split(scanner.Text(), " ")
-			//if scanner.Text() == "wololo" {
-			fmt.Println(text[1])
-			//fmt.Println(scanner.Text())
-			//}
+	for scanner.Scan() {
+		text := strings.Split(scanner.Text(), " ")
+		if text[0] == hostname {
+			return text[1]
 		}
-
-	} else {
-
-		fmt.Println("Le fichier DNS est vide")
 	}
-
-}
-
-//Parser fichier
-func main() {
-
-	//Pour effectuer la recherche
-	//Variables publiques
-	//var Address string  //Variable publiques (Lettre majuscule en Go)
-	//var Filename string //Variable publiques (Lettre majuscule en Go)
-
-	startSearch("DNSFILE.TXT")
+	return ""
 }
