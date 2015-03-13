@@ -41,11 +41,11 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		go handlePacket(buf[0:rlen])
+		go handlePacket(sock, buf[0:rlen])
 	}
 }
 
-func handlePacket(packet []byte) {
+func handlePacket(conn *net.UDPConn, packet []byte) {
 
 	// Lecture de QR
 	QR := packet[3]
@@ -71,13 +71,16 @@ func handlePacket(packet []byte) {
 		// *Si le mode est redirection seulement
 		if redirectionSeulement {
 			// *Rediriger le paquet vers le serveur DNS
+			fmt.Println("Forwarding request...")
+			serverAddr, _ := net.ResolveUDPAddr("udp", "8.8.8.8:53")
+			conn.WriteToUDP(packet, serverAddr)
 		} else {
 			// *Sinon
 			// *Rechercher l'adresse IP associe au Query Domain name dans le fichier de correspondance de ce serveur
 		}
 
 	} else { // ****** Dans le cas d'un paquet reponse *****
-		fmt.Print("ELLO")
+		fmt.Print("Received answer")
 	}
 
 }
