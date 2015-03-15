@@ -7,12 +7,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/PLWagner/reseaux-lab4/go/partie3/queryFinder"
 )
 
 var redirectionSeulement bool
-var qFinder queryFinder.QueryFinder
+var qFinder *QueryFinder
 
 // Those are the queries we have no answer for yet
 var waitingQueries map[string][2]string
@@ -35,7 +33,7 @@ func main() {
 	}
 
 	// Create a QueryFinder with the dnsFile
-	qFinder = *queryFinder.NewQueryFinder(*dnsFileFlag)
+	qFinder = NewQueryFinder(*dnsFileFlag)
 
 	redirectionSeulement = *redirectOnlyFlag
 

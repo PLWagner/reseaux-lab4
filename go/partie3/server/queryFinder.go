@@ -1,4 +1,4 @@
-package queryFinder
+package main
 
 import (
 	"bufio"
