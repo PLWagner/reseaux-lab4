@@ -19,29 +19,39 @@ func main() {
 	var port = flag.String("port", "", "Port Number")
 	var redirectOnlyFlag = flag.Bool("redirectionSeulement", false, "Should the server only redirect")
 	var dnsFileFlag = flag.String("DNSFile", "", "DNS file path")
+	var defaultFlag = flag.Bool("default", false, "DNS file path")
 	flag.Parse()
 
-	// Parse and init the arguments
-	if *port == "" {
-		fmt.Println("You must specify --port")
-		os.Exit(1)
+	if *defaultFlag {
+		*port = "53"
+		redirectionSeulement = true
+	} else {
+		// Parse and init the arguments
+		if *port == "" {
+			fmt.Println("You must specify --port")
+			os.Exit(1)
+		}
+
+		redirectionSeulement = *redirectOnlyFlag
+
+		if !redirectionSeulement && *dnsFileFlag == "" {
+			fmt.Println("You must specify --DNSFile")
+			os.Exit(1)
+		}
 	}
 
-	if *dnsFileFlag == "" {
-		fmt.Println("You must specify --DNSFile")
-		os.Exit(1)
+	if !redirectionSeulement {
+		// Create a QueryFinder with the dnsFile
+		qFinder = NewQueryFinder(*dnsFileFlag)
 	}
-
-	// Create a QueryFinder with the dnsFile
-	qFinder = NewQueryFinder(*dnsFileFlag)
-
-	redirectionSeulement = *redirectOnlyFlag
 
 	waitingQueries = make(map[string][2]string)
 
 	// Create the Socket
 	addr, _ := net.ResolveUDPAddr("udp", ":"+*port)
 	sock, _ := net.ListenUDP("udp", addr)
+
+	fmt.Println("Starting server on port", *port)
 
 	// Main UDP loop
 	for {
