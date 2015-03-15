@@ -18,17 +18,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	ln, err := net.Listen("tcp", ":"+*port)
-	if err != nil {
-		println("Listen failed:", err.Error())
-		os.Exit(1)
-	}
-
 	for {
+
+		ln, err := net.Listen("tcp", ":"+*port)
+		if err != nil {
+			println("Listen failed:", err.Error())
+			os.Exit(1)
+		}
+
 		con, err := ln.Accept()
 		if err != nil {
 			println("Could not accept:", err.Error())
 		}
+		ln.Close()
+
 		connbuf := bufio.NewReader(con)
 		for {
 			str, err := connbuf.ReadString('\n')
