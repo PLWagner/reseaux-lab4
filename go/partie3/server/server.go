@@ -1,5 +1,9 @@
 package main
 
+//sudo go run queryFinder.go server.go --default
+//sudo go run queryFinder.go server.go --port 53 --forwardAddress 8.8.8.8 --DNSFile ./DNSFILE.TXT --redirectionSeulement
+//sudo go run queryFinder.go server.go --DNSFile ./DNSFILE.TXT showtable
+
 import (
 	"flag"
 	"fmt"
@@ -11,6 +15,7 @@ import (
 
 var redirectionSeulement bool
 var qFinder *QueryFinder
+var forwardAddress string
 
 // Those are the queries we have no answer for yet
 var waitingQueries map[string][2]string
@@ -20,6 +25,7 @@ func main() {
 	var redirectOnlyFlag = flag.Bool("redirectionSeulement", false, "Should the server only redirect")
 	var dnsFileFlag = flag.String("DNSFile", "", "DNS file path")
 	var defaultFlag = flag.Bool("default", false, "DNS file path")
+	var forwardFlag = flag.String("forwardAddress", "8.8.8.8", "Address to forward to")
 	flag.Parse()
 
 	if flag.Arg(0) == "showtable" {
@@ -32,6 +38,7 @@ func main() {
 	if *defaultFlag {
 		*port = "53"
 		redirectionSeulement = true
+		forwardAddress = "8.8.8.8"
 	} else {
 		// Parse and init the arguments
 		if *port == "" {
@@ -45,6 +52,8 @@ func main() {
 			fmt.Println("You must specify --DNSFile")
 			os.Exit(1)
 		}
+
+		forwardAddress = *forwardFlag
 	}
 
 	if !redirectionSeulement {
@@ -114,7 +123,7 @@ func handlePacket(conn *net.UDPConn, sourceAddr *net.UDPAddr, packet []byte) {
 
 			fmt.Print("BYTES:", answer)
 		} else {
-			forwardPacket("8.8.8.8", "53", conn, packet)
+			forwardPacket(forwardAddress, "53", conn, packet)
 			waitingQueries[string(ID)] = [2]string{sourceAddr.IP.String(), strconv.Itoa(sourceAddr.Port)}
 		}
 
