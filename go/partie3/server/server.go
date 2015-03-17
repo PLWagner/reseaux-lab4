@@ -22,6 +22,13 @@ func main() {
 	var defaultFlag = flag.Bool("default", false, "DNS file path")
 	flag.Parse()
 
+	if flag.Arg(0) == "showtable" {
+		qFinder = NewQueryFinder(*dnsFileFlag)
+		fmt.Println("DNS TABLE:")
+		qFinder.Dump()
+		os.Exit(0)
+	}
+
 	if *defaultFlag {
 		*port = "53"
 		redirectionSeulement = true
@@ -92,7 +99,20 @@ func handlePacket(conn *net.UDPConn, sourceAddr *net.UDPAddr, packet []byte) {
 		}
 		if ip != "" {
 			fmt.Println("Found in .TXT ", ip)
-			//TODO: answer the query
+			var answer []byte
+
+			//HEADER: ID
+			answer = append(answer, packet[1])
+			answer = append(answer, packet[2])
+
+			//HEADER: QR (3e byte)
+			answer = append(answer, 1<<uint(7))
+
+			packet[3] = 1 << uint(7)
+
+			forwardPacket(sourceAddr.IP.String(), strconv.Itoa(sourceAddr.Port), conn, packet)
+
+			fmt.Print("BYTES:", answer)
 		} else {
 			forwardPacket("8.8.8.8", "53", conn, packet)
 			waitingQueries[string(ID)] = [2]string{sourceAddr.IP.String(), strconv.Itoa(sourceAddr.Port)}
@@ -112,4 +132,11 @@ func forwardPacket(hostname, port string, conn *net.UDPConn, packet []byte) {
 	fmt.Println("Forwarding to", hostname, ":", port)
 	serverAddr, _ := net.ResolveUDPAddr("udp", hostname+":"+port)
 	conn.WriteToUDP(packet, serverAddr)
+}
+
+//dnsMsgHdr is a DNS query reply packet
+type dnsHeader struct {
+	Id                                 uint16
+	Bits                               uint16
+	Qdcount, Ancount, Nscount, Arcount uint16
 }

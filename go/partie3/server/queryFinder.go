@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -29,6 +30,20 @@ func (q *QueryFinder) SearchHost(hostname string) string {
 		if text[0] == hostname {
 			return text[1]
 		}
+	}
+	return ""
+}
+
+//Dump prints the DNS table
+func (q *QueryFinder) Dump() string {
+	inFile, _ := os.Open(q.dnsFilePath)
+	defer inFile.Close()
+	scanner := bufio.NewScanner(inFile)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		text := strings.Split(scanner.Text(), " ")
+		fmt.Println(text[0], text[1])
 	}
 	return ""
 }
